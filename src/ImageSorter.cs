@@ -1,6 +1,5 @@
 /*
 画像整理プログラムImageSorter
-
 ･ASDFJKL;にフォルダを割り当て，押した瞬間に見てる画像をフォルダに移動，次の画像を表示する．TODO
 ･アンドゥ対応TODO
 */
@@ -13,13 +12,13 @@ using System.Windows.Forms;
 static class MainFrame {
 	[STAThread]
 	static void Main(string[] args) {
-		Window window = new Window(args);
+		ImageSorter imagesorter = new ImageSorter(args);
 		Application.EnableVisualStyles();
 		Application.Run(window);
 	}
 }
 
-public class Window : Form
+public class ImageSorter : Form
 {
 	const int WIN_WIDTH = 800;
 	const int WIN_HEIGHT = 400;

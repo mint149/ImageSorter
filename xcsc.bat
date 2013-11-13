@@ -1,5 +1,5 @@
 csc ^
 /optimize+ ^
-/out:ImageSort.exe ^
+/out:ImageSorter.exe ^
 src\*.cs
 pause
