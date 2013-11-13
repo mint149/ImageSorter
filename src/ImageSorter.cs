@@ -22,6 +22,7 @@ public class ImageSorter : Form
 
 	string imgDirPath;
 	List<string> files;
+	List<string> prevMovFile = new List<string>();
 
 	PictureBox imgPanel;
 
@@ -67,6 +68,7 @@ public class ImageSorter : Form
 			imgPanel.Image = null;
 		}
 		File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
+		prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
 		files.Remove(files[0]);
 	}
 
@@ -79,10 +81,23 @@ public class ImageSorter : Form
 			if (fbd.ShowDialog(this) == DialogResult.OK){
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
-				Console.WriteLine(files[0]);
+				prevMovFile.Clear();
 				imgPanel.Image = CreateImage(files[0]);
 			}
 			fbd.Dispose();
+			return true;
+		}
+
+		//アンドゥ
+		if(keyData == (Keys.Control | Keys.Z)) {
+			if(prevMovFile.Count == 0){
+				return true;
+			}
+			string fileName = Path.GetFileName(prevMovFile[prevMovFile.Count - 1]);
+			File.Move(prevMovFile[prevMovFile.Count - 1], imgDirPath + "//" + fileName);
+			files.Insert(0, imgDirPath + "//" + fileName);
+			imgPanel.Image =  CreateImage(files[0]);
+			prevMovFile.RemoveAt(prevMovFile.Count - 1);
 			return true;
 		}
 
