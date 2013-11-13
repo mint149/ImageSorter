@@ -14,7 +14,7 @@ static class MainFrame {
 	static void Main(string[] args) {
 		ImageSorter imagesorter = new ImageSorter(args);
 		Application.EnableVisualStyles();
-		Application.Run(window);
+		Application.Run(imagesorter);
 	}
 }
 
@@ -28,7 +28,7 @@ public class ImageSorter : Form
 
 	PictureBox imgPanel;
 
-	public Window(string[] args)
+	public ImageSorter(string[] args)
 	{
 		this.Text = "ImageSorter";
 		this.DoubleBuffered = true;
