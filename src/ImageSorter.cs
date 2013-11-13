@@ -19,10 +19,12 @@ public class ImageSorter : Form
 {
 	const int WIN_WIDTH = 800;
 	const int WIN_HEIGHT = 400;
+	const int KEY_NUM = 4;
 
 	string imgDirPath;
 	List<string> files;
 	List<string> prevMovFile = new List<string>();
+	string[] settings = new string[KEY_NUM];
 
 	PictureBox imgPanel;
 
@@ -41,6 +43,28 @@ public class ImageSorter : Form
 		
 		this.Controls.Add(imgPanel);
 		this.BackColor = SystemColors.Window;
+		Init();
+	}
+
+	public void Init(){
+		FolderBrowserDialog fbd = new FolderBrowserDialog();
+
+		if (fbd.ShowDialog(this) == DialogResult.OK){
+			imgDirPath = fbd.SelectedPath;
+			files = new List<string>(Directory.GetFiles(imgDirPath));
+			prevMovFile.Clear();
+			imgPanel.Image = CreateImage(files[0]);
+		}
+		fbd.Dispose();
+
+		using(StreamReader sr = new StreamReader("settings.csv")){
+			for(int cnt=0; cnt<KEY_NUM; cnt++){
+				settings[cnt] = sr.ReadLine();
+				if(!(Directory.Exists(imgDirPath + "\\" + settings[cnt]))){
+					Directory.CreateDirectory(imgDirPath + "\\" + settings[cnt]);
+				}
+			}
+		}
 	}
 
 	//指定したファイルをロックせずにImageを生成する
@@ -103,15 +127,25 @@ public class ImageSorter : Form
 
 		//各キーで移動
 		if(keyData == (Keys.D)) {
-			MoveAndNext("Deleted");
+			MoveAndNext(settings[0]);
 			return true;
 		}
 
 		if(keyData == (Keys.F)) {
-			MoveAndNext("Remained");
+			MoveAndNext(settings[1]);
 			return true;
 		}
+
+		if(keyData == (Keys.J)) {
+			MoveAndNext(settings[2]);
+			return true;
+		}
+
+		if(keyData == (Keys.K)) {
+			MoveAndNext(settings[3]);
+			return true;
+		}
+
 		return base.ProcessCmdKey(ref msg, keyData);
 	}
-
 }
