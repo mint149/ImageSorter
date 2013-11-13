@@ -72,15 +72,11 @@ public class ImageSorter : Form
 
 	protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
 	{
-		//Ctrl+Oでファイルを開く
+		//ファイルを開く
 		if(keyData == (Keys.Control | Keys.O)) {
-			//FolderBrowserDialogクラスのインスタンスを作成
 			FolderBrowserDialog fbd = new FolderBrowserDialog();
 
-			//ダイアログを表示する
-			if (fbd.ShowDialog(this) == DialogResult.OK)
-			{
-				//選択されたフォルダを表示する
+			if (fbd.ShowDialog(this) == DialogResult.OK){
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
 				Console.WriteLine(files[0]);
@@ -89,12 +85,13 @@ public class ImageSorter : Form
 			fbd.Dispose();
 			return true;
 		}
-		// DでDeletedに移動
+
+		//各キーで移動
 		if(keyData == (Keys.D)) {
 			MoveAndNext("Deleted");
 			return true;
 		}
-		// FでRemainedに移動
+
 		if(keyData == (Keys.F)) {
 			MoveAndNext("Remained");
 			return true;
