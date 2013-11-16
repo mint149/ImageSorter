@@ -25,6 +25,7 @@ public class ImageSorter : Form
 	List<string> files;
 	List<string> prevMovFile = new List<string>();
 	string[] settings = new string[KEY_NUM];
+	bool isEnd = false;
 
 	PictureBox imgPanel;
 
@@ -47,105 +48,95 @@ public class ImageSorter : Form
 	}
 
 	public void Init(){
-		FolderBrowserDialog fbd = new FolderBrowserDialog();
-
-		if (fbd.ShowDialog(this) == DialogResult.OK){
-			imgDirPath = fbd.SelectedPath;
-			files = new List<string>(Directory.GetFiles(imgDirPath));
-			prevMovFile.Clear();
-			imgPanel.Image = CreateImage(files[0]);
-		}
-		fbd.Dispose();
-
+		OpenFolder();
 		using(StreamReader sr = new StreamReader("settings.csv")){
 			for(int cnt=0; cnt<KEY_NUM; cnt++){
 				settings[cnt] = sr.ReadLine();
-				if(!(Directory.Exists(imgDirPath + "\\" + settings[cnt]))){
-					Directory.CreateDirectory(imgDirPath + "\\" + settings[cnt]);
+				string[] temp = settings[cnt].Split(',');
+				if (!(Directory.Exists(imgDirPath + "\\" + temp[1])))
+				{
+					Directory.CreateDirectory(imgDirPath + "\\" + temp[1]);
 				}
 			}
 		}
 	}
 
 	//指定したファイルをロックせずにImageを生成する
-	public static Image CreateImage(string filename)
-	{
-		FileStream fs = new FileStream(
-			filename,
-			FileMode.Open,
-			FileAccess.Read
-		);
-		Image img = Image.FromStream(fs);
-		fs.Close();
+	public static Image CreateImage(string filename){
+		FileStream fs;
+		Image img;
+		try{
+			fs= new FileStream(
+				filename,
+				FileMode.Open,
+				FileAccess.Read
+			);
+			img = Image.FromStream(fs);
+			fs.Close();
+		}catch{
+			Console.WriteLine(filename + "は画像ファイルではありません");
+			return null;
+		}
 		return img;
 	}
 
 	//ディレクトリに仕分けて次を表示
 	public void MoveAndNext(string movDirPath){
-		if(imgPanel.Image == null){
-			return;
+		if(!isEnd){
+			string fileName = Path.GetFileName(files[0]);
+			if(files.Count > 1){
+				imgPanel.Image =  CreateImage(files[1]);
+			}else{
+				isEnd = true;
+				imgPanel.Image = null;
+			}
+			File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
+			prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
+			files.Remove(files[0]);
 		}
-		string fileName = Path.GetFileName(files[0]);
-		if(files.Count > 1){
-			imgPanel.Image =  CreateImage(files[1]);
-		}else{
-			imgPanel.Image = null;
-		}
-		File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
-		prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
-		files.Remove(files[0]);
 	}
 
-	protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-	{
-		//ファイルを開く
-		if(keyData == (Keys.Control | Keys.O)) {
-			FolderBrowserDialog fbd = new FolderBrowserDialog();
-
+	public void OpenFolder(){
+		using(FolderBrowserDialog fbd = new FolderBrowserDialog()){
 			if (fbd.ShowDialog(this) == DialogResult.OK){
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
 				prevMovFile.Clear();
 				imgPanel.Image = CreateImage(files[0]);
+				isEnd = false;
 			}
-			fbd.Dispose();
+		}
+	}
+
+	protected override bool ProcessCmdKey(ref Message msg, Keys keyData){
+		KeysConverter kc = new KeysConverter();
+
+		if(keyData == (Keys.Control | Keys.O)) {
+			OpenFolder();
 			return true;
 		}
 
 		//アンドゥ
 		if(keyData == (Keys.Control | Keys.Z)) {
-			if(prevMovFile.Count == 0){
+			if (prevMovFile.Count != 0){
+				int last = prevMovFile.Count - 1;
+				string fileName = Path.GetFileName(prevMovFile[last]);
+				File.Move(prevMovFile[last], imgDirPath + "//" + fileName);
+				files.Insert(0, imgDirPath + "//" + fileName);
+				imgPanel.Image = CreateImage(files[0]);
+				prevMovFile.RemoveAt(last);
+			}
+			return true;
+		}
+
+		//各キーでフォルダ移動
+		for (int cnt = 0; cnt < KEY_NUM; cnt++){
+			string[] temp = settings[cnt].Split(',');
+			if (keyData == ((Keys)kc.ConvertFromString(temp[0]))){
+				MoveAndNext(temp[1]);
 				return true;
 			}
-			string fileName = Path.GetFileName(prevMovFile[prevMovFile.Count - 1]);
-			File.Move(prevMovFile[prevMovFile.Count - 1], imgDirPath + "//" + fileName);
-			files.Insert(0, imgDirPath + "//" + fileName);
-			imgPanel.Image =  CreateImage(files[0]);
-			prevMovFile.RemoveAt(prevMovFile.Count - 1);
-			return true;
 		}
-
-		//各キーで移動
-		if(keyData == (Keys.D)) {
-			MoveAndNext(settings[0]);
-			return true;
-		}
-
-		if(keyData == (Keys.F)) {
-			MoveAndNext(settings[1]);
-			return true;
-		}
-
-		if(keyData == (Keys.J)) {
-			MoveAndNext(settings[2]);
-			return true;
-		}
-
-		if(keyData == (Keys.K)) {
-			MoveAndNext(settings[3]);
-			return true;
-		}
-
 		return base.ProcessCmdKey(ref msg, keyData);
 	}
 }
