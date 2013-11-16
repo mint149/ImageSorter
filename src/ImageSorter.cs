@@ -50,7 +50,6 @@ public class ImageSorter : Form
 	public bool IsImage(string fileName){
 		string[] extension = new string[] { ".jpg", ".jpeg ", ".png", ".svg", ".tiff", ".tif", "bmp", ".jp2", ".j2c", "dib", ".jxr", ".hdp", ".wdp" };
 		string fileEx = Path.GetExtension(fileName);
-		Console.WriteLine(fileEx);
 		foreach (string ex in extension){
 			if (string.Compare(ex, fileEx, true) == 0){
 				return true;
@@ -105,7 +104,7 @@ public class ImageSorter : Form
 				imgPanel.Image =  CreateImage(files[1]);
 			}else{
 				isEnd = true;
-				imgPanel.Image = null;
+				imgPanel.Image = CreateImage("img//completed.png");
 			}
 			if(IsImage(fileName)){
 				File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
