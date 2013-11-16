@@ -47,6 +47,18 @@ public class ImageSorter : Form
 		Init();
 	}
 
+	public bool IsImage(string fileName){
+		string[] extension = new string[] { ".jpg", ".jpeg ", ".png", ".svg", ".tiff", ".tif", "bmp", ".jp2", ".j2c", "dib", ".jxr", ".hdp", ".wdp" };
+		string fileEx = Path.GetExtension(fileName);
+		Console.WriteLine(fileEx);
+		foreach (string ex in extension){
+			if (string.Compare(ex, fileEx, true) == 0){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public void Init(){
 		OpenFolder();
 		using(StreamReader sr = new StreamReader("settings.csv")){
@@ -62,20 +74,25 @@ public class ImageSorter : Form
 	}
 
 	//指定したファイルをロックせずにImageを生成する
-	public static Image CreateImage(string filename){
+	public Image CreateImage(string fileName){
 		FileStream fs;
 		Image img;
-		try{
-			fs= new FileStream(
-				filename,
-				FileMode.Open,
-				FileAccess.Read
-			);
-			img = Image.FromStream(fs);
-			fs.Close();
-		}catch{
-			Console.WriteLine(filename + "は画像ファイルではありません");
-			return null;
+		if(IsImage(fileName)){
+			try{
+				fs= new FileStream(
+					fileName,
+					FileMode.Open,
+					FileAccess.Read
+				);
+				img = Image.FromStream(fs);
+				fs.Close();
+			}catch{
+				Console.WriteLine(fileName + "は画像ファイルではありません");
+				img = null;
+			}
+		}else{
+			Console.WriteLine(fileName + "は画像ファイルではありません");
+			img = null;
 		}
 		return img;
 	}
@@ -90,8 +107,10 @@ public class ImageSorter : Form
 				isEnd = true;
 				imgPanel.Image = null;
 			}
-			File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
-			prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
+			if(IsImage(fileName)){
+				File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
+				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
+			}
 			files.Remove(files[0]);
 		}
 	}
