@@ -15,8 +15,7 @@ static class MainFrame {
 	}
 }
 
-public class ImageSorter : Form
-{
+public class ImageSorter : Form{
 	const int WIN_WIDTH = 800;
 	const int WIN_HEIGHT = 400;
 	const int KEY_NUM = 4;
@@ -96,7 +95,7 @@ public class ImageSorter : Form
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
 				prevMovFile.Clear();
-				imgPanel.Image = CreateImage(files[0]);
+				showNextImage();
 				isEnd = false;
 				tsslText.Text = "";
 			}
@@ -152,13 +151,24 @@ public class ImageSorter : Form
 				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
 				tsslText.Text = fileName + " moved at " + movDirPath + ".";
 			}
-			if(files.Count > 1){
-				imgPanel.Image =  CreateImage(files[1]);
-			}else{
+			showNextImage();
+			files.Remove(files[0]);
+		}
+	}
+
+	void showNextImage(){
+		while(true){
+			if(files.Count <= 1){
 				isEnd = true;
 				imgPanel.Image = CreateImage("img//completed.png");
+				break;
 			}
-			files.Remove(files[0]);
+			if(IsImage(files[1])){
+				imgPanel.Image =  CreateImage(files[1]);
+				break;
+			}else{
+				files.Remove(files[1]);
+			}
 		}
 	}
 
@@ -174,6 +184,7 @@ public class ImageSorter : Form
 				files.Insert(0, imgDirPath + "//" + fileName);
 				imgPanel.Image = CreateImage(files[0]);
 				prevMovFile.RemoveAt(last);
+				isEnd = false;
 			}
 			return true;
 		}
