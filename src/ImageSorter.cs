@@ -23,7 +23,7 @@ public class ImageSorter : Form{
 	List<string> files;
 	List<string> prevMovFile = new List<string>();
 	List<string> settings = new List<string>();
-	bool isEnd = false;
+	bool isEnd = true;
 	MenuStrip ms;
 	StatusStrip ss;
 	ToolStripStatusLabel tsslText;
