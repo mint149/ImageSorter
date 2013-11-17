@@ -185,6 +185,7 @@ public class ImageSorter : Form{
 				imgPanel.Image = CreateImage(files[0]);
 				prevMovFile.RemoveAt(last);
 				isEnd = false;
+				tsslText.Text = fileName + " returned at " + imgDirPath + ".";
 			}
 			return true;
 		}
