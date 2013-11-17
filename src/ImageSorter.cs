@@ -26,17 +26,38 @@ public class ImageSorter : Form
 	List<string> prevMovFile = new List<string>();
 	string[] settings = new string[KEY_NUM];
 	bool isEnd = false;
+	MenuStrip ms;
 
 	PictureBox imgPanel;
 
-	public ImageSorter(string[] args)
-	{
+	public ImageSorter(string[] args){
 		this.Text = "ImageSorter";
 		this.DoubleBuffered = true;
 		this.ClientSize = new Size(WIN_WIDTH, WIN_HEIGHT);
 		this.FormBorderStyle = FormBorderStyle.FixedSingle;
 		this.MaximizeBox = false;
-		
+
+		ToolStripMenuItem tsmiOpen = new ToolStripMenuItem("フォルダを開く(&O)");
+		tsmiOpen.Click += new EventHandler(tsmiOpen_Click);
+		tsmiOpen.ShortcutKeys = Keys.Control | Keys.O;
+
+		ToolStripMenuItem tsmiReload = new ToolStripMenuItem("設定をリロード(&R)");
+		tsmiReload.Click += new EventHandler(tsmiReload_Click);
+		tsmiReload.ShortcutKeys = Keys.Control | Keys.R;
+
+		ToolStripMenuItem tsmiFile = new ToolStripMenuItem("ファイル(&F)");
+		tsmiFile.DropDownItems.AddRange(new ToolStripItem[]{
+			tsmiOpen, new ToolStripSeparator(), tsmiReload
+		});
+
+		ms = new MenuStrip();
+		ms.Items.AddRange(new ToolStripItem[]{
+			tsmiFile
+		});
+
+		this.Controls.Add(ms);
+		this.MainMenuStrip = ms;
+
 		imgPanel = new PictureBox() {
 			Size = new Size(WIN_WIDTH, WIN_HEIGHT),
 			SizeMode = PictureBoxSizeMode.Zoom,
@@ -44,7 +65,9 @@ public class ImageSorter : Form
 		
 		this.Controls.Add(imgPanel);
 		this.BackColor = SystemColors.Window;
-		Init();
+
+		//最初に設定を読み込む
+		tsmiReload_Click(null, null);
 	}
 
 	public bool IsImage(string fileName){
@@ -58,8 +81,19 @@ public class ImageSorter : Form
 		return false;
 	}
 
-	public void Init(){
-		OpenFolder();
+	void tsmiOpen_Click(object sender, EventArgs e){
+		using(FolderBrowserDialog fbd = new FolderBrowserDialog()){
+			if (fbd.ShowDialog(this) == DialogResult.OK){
+				imgDirPath = fbd.SelectedPath;
+				files = new List<string>(Directory.GetFiles(imgDirPath));
+				prevMovFile.Clear();
+				imgPanel.Image = CreateImage(files[0]);
+				isEnd = false;
+			}
+		}
+	}
+
+	void tsmiReload_Click(object sender, EventArgs e){
 		using(StreamReader sr = new StreamReader("settings.csv")){
 			for(int cnt=0; cnt<KEY_NUM; cnt++){
 				settings[cnt] = sr.ReadLine();
@@ -114,25 +148,8 @@ public class ImageSorter : Form
 		}
 	}
 
-	public void OpenFolder(){
-		using(FolderBrowserDialog fbd = new FolderBrowserDialog()){
-			if (fbd.ShowDialog(this) == DialogResult.OK){
-				imgDirPath = fbd.SelectedPath;
-				files = new List<string>(Directory.GetFiles(imgDirPath));
-				prevMovFile.Clear();
-				imgPanel.Image = CreateImage(files[0]);
-				isEnd = false;
-			}
-		}
-	}
-
 	protected override bool ProcessCmdKey(ref Message msg, Keys keyData){
 		KeysConverter kc = new KeysConverter();
-
-		if(keyData == (Keys.Control | Keys.O)) {
-			OpenFolder();
-			return true;
-		}
 
 		//アンドゥ
 		if(keyData == (Keys.Control | Keys.Z)) {
