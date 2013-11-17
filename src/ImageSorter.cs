@@ -98,8 +98,7 @@ public class ImageSorter : Form
 			for(int cnt=0; cnt<KEY_NUM; cnt++){
 				settings[cnt] = sr.ReadLine();
 				string[] temp = settings[cnt].Split(',');
-				if (!(Directory.Exists(imgDirPath + "\\" + temp[1])))
-				{
+				if (!(Directory.Exists(imgDirPath + "\\" + temp[1]))){
 					Directory.CreateDirectory(imgDirPath + "\\" + temp[1]);
 				}
 			}
@@ -126,6 +125,11 @@ public class ImageSorter : Form
 		}else{
 			Console.WriteLine(fileName + "は画像ファイルではありません");
 			img = null;
+		}
+		if(fileName == "img//completed.png"){
+			this.Text = "ImageSorter - " + imgDirPath + " is Completed!";
+		}else{
+			this.Text = "ImageSorter - " + fileName;
 		}
 		return img;
 	}
