@@ -27,6 +27,8 @@ public class ImageSorter : Form
 	string[] settings = new string[KEY_NUM];
 	bool isEnd = false;
 	MenuStrip ms;
+	StatusStrip ss;
+	ToolStripStatusLabel tsslText;
 
 	PictureBox imgPanel;
 
@@ -51,10 +53,17 @@ public class ImageSorter : Form
 		});
 
 		ms = new MenuStrip();
-		ms.Items.AddRange(new ToolStripItem[]{
-			tsmiFile
-		});
+		ms.Items.Add(tsmiFile);
 
+		tsslText = new ToolStripStatusLabel();
+
+		ss = new StatusStrip();
+		ss.Dock = DockStyle.Bottom;
+		ss.LayoutStyle = ToolStripLayoutStyle.StackWithOverflow;
+
+		ss.Items.Add(tsslText);
+
+		this.Controls.Add(ss);
 		this.Controls.Add(ms);
 		this.MainMenuStrip = ms;
 
@@ -64,7 +73,7 @@ public class ImageSorter : Form
 		};
 		
 		this.Controls.Add(imgPanel);
-		this.BackColor = SystemColors.Window;
+		//this.BackColor = SystemColors.Window;
 
 		//最初に設定を読み込む
 		tsmiReload_Click(null, null);
@@ -89,6 +98,7 @@ public class ImageSorter : Form
 				prevMovFile.Clear();
 				imgPanel.Image = CreateImage(files[0]);
 				isEnd = false;
+				tsslText.Text = "";
 			}
 		}
 	}
@@ -119,11 +129,10 @@ public class ImageSorter : Form
 				img = Image.FromStream(fs);
 				fs.Close();
 			}catch{
-				Console.WriteLine(fileName + "は画像ファイルではありません");
 				img = null;
 			}
 		}else{
-			Console.WriteLine(fileName + "は画像ファイルではありません");
+			tsslText.Text = fileName + " is not image.";
 			img = null;
 		}
 		if(fileName == "img//completed.png"){
@@ -138,15 +147,16 @@ public class ImageSorter : Form
 	public void MoveAndNext(string movDirPath){
 		if(!isEnd){
 			string fileName = Path.GetFileName(files[0]);
+			if(IsImage(fileName)){
+				File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
+				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
+				tsslText.Text = fileName + " moved at " + movDirPath + ".";
+			}
 			if(files.Count > 1){
 				imgPanel.Image =  CreateImage(files[1]);
 			}else{
 				isEnd = true;
 				imgPanel.Image = CreateImage("img//completed.png");
-			}
-			if(IsImage(fileName)){
-				File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
-				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
 			}
 			files.Remove(files[0]);
 		}
