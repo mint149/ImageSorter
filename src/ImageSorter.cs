@@ -18,12 +18,11 @@ static class MainFrame {
 public class ImageSorter : Form{
 	const int WIN_WIDTH = 800;
 	const int WIN_HEIGHT = 400;
-	const int KEY_NUM = 4;
 
 	string imgDirPath;
 	List<string> files;
 	List<string> prevMovFile = new List<string>();
-	string[] settings = new string[KEY_NUM];
+	List<string> settings = new List<string>();
 	bool isEnd = false;
 	MenuStrip ms;
 	StatusStrip ss;
@@ -81,8 +80,9 @@ public class ImageSorter : Form{
 	public bool IsImage(string fileName){
 		string[] extension = new string[] { ".jpg", ".jpeg ", ".png", ".svg", ".tiff", ".tif", "bmp", ".jp2", ".j2c", "dib", ".jxr", ".hdp", ".wdp" };
 		string fileEx = Path.GetExtension(fileName);
-		foreach (string ex in extension){
-			if (string.Compare(ex, fileEx, true) == 0){
+		bool isIgnore = true;
+		foreach (string imageEx in extension){
+			if (string.Compare(imageEx, fileEx, isIgnore) == 0){
 				return true;
 			}
 		}
@@ -92,11 +92,11 @@ public class ImageSorter : Form{
 	void tsmiOpen_Click(object sender, EventArgs e){
 		using(FolderBrowserDialog fbd = new FolderBrowserDialog()){
 			if (fbd.ShowDialog(this) == DialogResult.OK){
+				isEnd = false;
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
 				prevMovFile.Clear();
-				showNextImage();
-				isEnd = false;
+				showImage();
 				tsslText.Text = "";
 			}
 		}
@@ -104,11 +104,12 @@ public class ImageSorter : Form{
 
 	void tsmiReload_Click(object sender, EventArgs e){
 		using(StreamReader sr = new StreamReader("settings.csv")){
-			for(int cnt=0; cnt<KEY_NUM; cnt++){
-				settings[cnt] = sr.ReadLine();
-				string[] temp = settings[cnt].Split(',');
-				if (!(Directory.Exists(imgDirPath + "\\" + temp[1]))){
-					Directory.CreateDirectory(imgDirPath + "\\" + temp[1]);
+			string temp;
+			while((temp = sr.ReadLine()) != null){
+				settings.Add(temp);
+				string movDirPath = imgDirPath + "\\" + temp.Split(',')[1];
+				if (!(Directory.Exists(movDirPath))){
+					Directory.CreateDirectory(movDirPath);
 				}
 			}
 		}
@@ -151,23 +152,23 @@ public class ImageSorter : Form{
 				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
 				tsslText.Text = fileName + " moved at " + movDirPath + ".";
 			}
-			showNextImage();
 			files.Remove(files[0]);
+			showImage();
 		}
 	}
 
-	void showNextImage(){
+	void showImage(){
 		while(true){
-			if(files.Count <= 1){
+			if(files.Count == 0){
 				isEnd = true;
 				imgPanel.Image = CreateImage("img//completed.png");
 				break;
 			}
-			if(IsImage(files[1])){
-				imgPanel.Image =  CreateImage(files[1]);
+			if(IsImage(files[0])){
+				imgPanel.Image =  CreateImage(files[0]);
 				break;
 			}else{
-				files.Remove(files[1]);
+				files.Remove(files[0]);
 			}
 		}
 	}
@@ -191,10 +192,11 @@ public class ImageSorter : Form{
 		}
 
 		//各キーでフォルダ移動
-		for (int cnt = 0; cnt < KEY_NUM; cnt++){
-			string[] temp = settings[cnt].Split(',');
-			if (keyData == ((Keys)kc.ConvertFromString(temp[0]))){
-				MoveAndNext(temp[1]);
+		foreach(string setting in settings){
+			string keyString = setting.Split(',')[0];
+			string movDirPath = setting.Split(',')[1];
+			if (keyData == ((Keys)kc.ConvertFromString(keyString))){
+				MoveAndNext(movDirPath);
 				return true;
 			}
 		}
