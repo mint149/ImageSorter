@@ -1,4 +1,5 @@
 //画像整理プログラムImageSorter
+//Console.WriteLine(fileName);
 
 using System;
 using System.Collections.Generic;
@@ -19,15 +20,14 @@ public class ImageSorter : Form{
 	const int WIN_WIDTH = 800;
 	const int WIN_HEIGHT = 400;
 
+	bool isEnd = true;
 	string imgDirPath;
 	List<string> files;
 	List<string> prevMovFile = new List<string>();
 	List<string> settings = new List<string>();
-	bool isEnd = true;
-	MenuStrip ms;
-	StatusStrip ss;
+	MenuStrip menu;
+	StatusStrip statusBar;
 	ToolStripStatusLabel tsslText;
-
 	PictureBox imgPanel;
 
 	public ImageSorter(string[] args){
@@ -47,52 +47,40 @@ public class ImageSorter : Form{
 
 		ToolStripMenuItem tsmiFile = new ToolStripMenuItem("ファイル(&F)");
 		tsmiFile.DropDownItems.AddRange(new ToolStripItem[]{
-			tsmiOpen, new ToolStripSeparator(), tsmiReload
+			tsmiOpen, tsmiReload,
 		});
 
-		ms = new MenuStrip();
-		ms.Items.Add(tsmiFile);
+		menu = new MenuStrip();
+		menu.Items.Add(tsmiFile);
 
 		tsslText = new ToolStripStatusLabel();
 
-		ss = new StatusStrip();
-		ss.Dock = DockStyle.Bottom;
-		ss.LayoutStyle = ToolStripLayoutStyle.StackWithOverflow;
+		statusBar = new StatusStrip();
+		statusBar.Dock = DockStyle.Bottom;
+		statusBar.LayoutStyle = ToolStripLayoutStyle.StackWithOverflow;
 
-		ss.Items.Add(tsslText);
-
-		this.Controls.Add(ss);
-		this.Controls.Add(ms);
-		this.MainMenuStrip = ms;
+		statusBar.Items.Add(tsslText);
 
 		imgPanel = new PictureBox() {
 			Size = new Size(WIN_WIDTH, WIN_HEIGHT),
 			SizeMode = PictureBoxSizeMode.Zoom,
 		};
-		
-		this.Controls.Add(imgPanel);
-		//this.BackColor = SystemColors.Window;
+
+		this.Controls.AddRange(new Control[]{
+			statusBar,
+			menu,
+			imgPanel,
+		});
+
+		this.MainMenuStrip = menu;
 
 		//最初に設定を読み込む
 		tsmiReload_Click(null, null);
 	}
 
-	public bool IsImage(string fileName){
-		string[] extension = new string[] { ".jpg", ".jpeg ", ".png", ".svg", ".tiff", ".tif", "bmp", ".jp2", ".j2c", "dib", ".jxr", ".hdp", ".wdp" };
-		string fileEx = Path.GetExtension(fileName);
-		bool isIgnore = true;
-		foreach (string imageEx in extension){
-			if (string.Compare(imageEx, fileEx, isIgnore) == 0){
-				return true;
-			}
-		}
-		return false;
-	}
-
 	void tsmiOpen_Click(object sender, EventArgs e){
 		using(FolderBrowserDialog fbd = new FolderBrowserDialog()){
 			if (fbd.ShowDialog(this) == DialogResult.OK){
-				isEnd = false;
 				imgDirPath = fbd.SelectedPath;
 				files = new List<string>(Directory.GetFiles(imgDirPath));
 				prevMovFile.Clear();
@@ -115,6 +103,68 @@ public class ImageSorter : Form{
 		}
 	}
 
+	//ディレクトリに仕分けて次を表示
+	public void MoveAndNext(string movDirPath){
+		if(!isEnd){
+			if(IsImage(files[0])){
+				string fileName = Path.GetFileName(files[0]);
+				string source = files[0];
+				string dist = imgDirPath + "\\" + movDirPath + "\\" + fileName;
+
+				File.Move(source, dist);
+				prevMovFile.Insert(0, dist);
+				tsslText.Text = fileName + " moved at " + movDirPath + ".";
+			}
+			files.RemoveAt(0);
+			showImage();
+		}
+	}
+
+	protected override bool ProcessCmdKey(ref Message msg, Keys keyData){
+		KeysConverter kc = new KeysConverter();
+
+		//アンドゥ
+		if(keyData == (Keys.Control | Keys.Z)) {
+			if (prevMovFile.Count != 0){
+				string fileName = Path.GetFileName(prevMovFile[0]);
+				string source = prevMovFile[0];
+				string dist = imgDirPath + "//" + fileName;
+
+				File.Move(source, dist);
+				files.Insert(0, dist);
+				tsslText.Text = fileName + " returned at " + imgDirPath + ".";
+
+				showImage();
+				prevMovFile.RemoveAt(0);
+			}
+			return true;
+		}
+
+		//各キーでフォルダ移動
+		foreach(string setting in settings){
+			string keyString = setting.Split(',')[0];
+			string movDirPath = setting.Split(',')[1];
+
+			if (keyData == ((Keys)kc.ConvertFromString(keyString))){
+				MoveAndNext(movDirPath);
+				return true;
+			}
+		}
+		return base.ProcessCmdKey(ref msg, keyData);
+	}
+
+	public bool IsImage(string fileName){
+		string[] extension = new string[] { ".jpg", ".jpeg ", ".png", ".svg", ".tiff", ".tif", "bmp", ".jp2", ".j2c", "dib", ".jxr", ".hdp", ".wdp" };
+		string fileEx = Path.GetExtension(fileName);
+		bool isIgnore = true;
+		foreach (string imageEx in extension){
+			if (string.Compare(imageEx, fileEx, isIgnore) == 0){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	//指定したファイルをロックせずにImageを生成する
 	public Image CreateImage(string fileName){
 		FileStream fs;
@@ -128,33 +178,16 @@ public class ImageSorter : Form{
 				);
 				img = Image.FromStream(fs);
 				fs.Close();
+				this.Text = "ImageSorter - " + fileName;
 			}catch{
 				img = null;
+				tsslText.Text = fileName + " is broken or not image.";
 			}
 		}else{
-			tsslText.Text = fileName + " is not image.";
 			img = null;
-		}
-		if(fileName == "img//completed.png"){
-			this.Text = "ImageSorter - " + imgDirPath + " is Completed!";
-		}else{
-			this.Text = "ImageSorter - " + fileName;
+			tsslText.Text = fileName + " is not image.";
 		}
 		return img;
-	}
-
-	//ディレクトリに仕分けて次を表示
-	public void MoveAndNext(string movDirPath){
-		if(!isEnd){
-			string fileName = Path.GetFileName(files[0]);
-			if(IsImage(fileName)){
-				File.Move(imgDirPath + "//" + fileName, imgDirPath + "\\" + movDirPath + "\\" + fileName);
-				prevMovFile.Add(imgDirPath + "\\" + movDirPath + "\\" + fileName);
-				tsslText.Text = fileName + " moved at " + movDirPath + ".";
-			}
-			files.Remove(files[0]);
-			showImage();
-		}
 	}
 
 	void showImage(){
@@ -162,44 +195,17 @@ public class ImageSorter : Form{
 			if(files.Count == 0){
 				isEnd = true;
 				imgPanel.Image = CreateImage("img//completed.png");
-				break;
-			}
-			if(IsImage(files[0])){
-				imgPanel.Image =  CreateImage(files[0]);
+				this.Text = "ImageSorter - " + imgDirPath + " is Completed!";
 				break;
 			}else{
-				files.Remove(files[0]);
+				if(IsImage(files[0])){
+					imgPanel.Image =  CreateImage(files[0]);
+					isEnd = false;
+					break;
+				}else{
+					files.Remove(files[0]);
+				}
 			}
 		}
-	}
-
-	protected override bool ProcessCmdKey(ref Message msg, Keys keyData){
-		KeysConverter kc = new KeysConverter();
-
-		//アンドゥ
-		if(keyData == (Keys.Control | Keys.Z)) {
-			if (prevMovFile.Count != 0){
-				int last = prevMovFile.Count - 1;
-				string fileName = Path.GetFileName(prevMovFile[last]);
-				File.Move(prevMovFile[last], imgDirPath + "//" + fileName);
-				files.Insert(0, imgDirPath + "//" + fileName);
-				imgPanel.Image = CreateImage(files[0]);
-				prevMovFile.RemoveAt(last);
-				isEnd = false;
-				tsslText.Text = fileName + " returned at " + imgDirPath + ".";
-			}
-			return true;
-		}
-
-		//各キーでフォルダ移動
-		foreach(string setting in settings){
-			string keyString = setting.Split(',')[0];
-			string movDirPath = setting.Split(',')[1];
-			if (keyData == ((Keys)kc.ConvertFromString(keyString))){
-				MoveAndNext(movDirPath);
-				return true;
-			}
-		}
-		return base.ProcessCmdKey(ref msg, keyData);
 	}
 }
