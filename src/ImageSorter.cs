@@ -103,7 +103,6 @@ public class ImageSorter : Form{
 			while((temp = sr.ReadLine()) != null){
 				settings.Add(temp);
 				string movDirPath = imgDirPath + "\\" + temp.Split(',')[1];
-				Console.WriteLine(movDirPath);
 				if (!(Directory.Exists(movDirPath))){
 					Directory.CreateDirectory(movDirPath);
 				}
