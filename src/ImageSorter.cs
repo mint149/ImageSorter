@@ -34,8 +34,8 @@ public class ImageSorter : Form{
 		this.Text = "ImageSorter";
 		this.DoubleBuffered = true;
 		this.ClientSize = new Size(WIN_WIDTH, WIN_HEIGHT);
-		this.FormBorderStyle = FormBorderStyle.FixedSingle;
 		this.MaximizeBox = false;
+		this.FormBorderStyle = FormBorderStyle.Sizable;
 
 		ToolStripMenuItem tsmiOpen = new ToolStripMenuItem("フォルダを開く(&O)");
 		tsmiOpen.Click += new EventHandler(tsmiOpen_Click);
@@ -62,7 +62,13 @@ public class ImageSorter : Form{
 		statusBar.Items.Add(tsslText);
 
 		imgPanel = new PictureBox() {
-			Size = new Size(WIN_WIDTH, WIN_HEIGHT),
+			Location = new Point(0, SystemInformation.MenuHeight),
+			Size = new Size(WIN_WIDTH, WIN_HEIGHT - (SystemInformation.MenuHeight * 2)),
+			Anchor = (AnchorStyles.Bottom | 
+				AnchorStyles.Top | 
+				AnchorStyles.Left | 
+				AnchorStyles.Right
+			),
 			SizeMode = PictureBoxSizeMode.Zoom,
 		};
 
@@ -86,6 +92,7 @@ public class ImageSorter : Form{
 				prevMovFile.Clear();
 				showImage();
 				tsslText.Text = "";
+				tsmiReload_Click(null, null);
 			}
 		}
 	}
@@ -96,6 +103,7 @@ public class ImageSorter : Form{
 			while((temp = sr.ReadLine()) != null){
 				settings.Add(temp);
 				string movDirPath = imgDirPath + "\\" + temp.Split(',')[1];
+				Console.WriteLine(movDirPath);
 				if (!(Directory.Exists(movDirPath))){
 					Directory.CreateDirectory(movDirPath);
 				}
